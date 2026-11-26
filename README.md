@@ -43,6 +43,9 @@ Add or edit franchises in [`src/categories.js`](src/categories.js) — it's just
 ### Handy details
 
 - **Phones falling asleep are fine.** Reopening the page reconnects you to your game with your score.
+- **Tough pairing?** While everyone is writing, the host can tap **🎲 Re-roll this pairing**.
+  After a confirmation, the round gets a fresh pair and all answers so far are cleared so
+  everyone can write a new one. Re-roll as many times as you like.
 - **Someone wandered off?** The host gets a "Stop waiting" button to move on without them,
   and can remove players from the lobby with ✕.
 - **Host left?** If the host is gone for 30 seconds, hosting passes to another player.

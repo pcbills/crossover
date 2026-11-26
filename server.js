@@ -158,6 +158,7 @@ io.on('connection', (socket) => {
   action('answer', (room, pid, { text }) => room.submitAnswer(pid, text));
   action('vote', (room, pid, { ranking }) => room.submitVote(pid, ranking));
   action('next', (room, pid) => room.nextRound(pid));
+  action('reroll', (room, pid) => room.reroll(pid));
   action('skip', (room, pid) => room.forceAdvance(pid));
   action('newGame', (room, pid) => room.newGame(pid));
   action('kick', (room, pid, { playerId }) => {

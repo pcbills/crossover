@@ -192,3 +192,31 @@ test('custom mixes with built-in categories, and survives a new game', () => {
   room.resetGame();
   assert.strictEqual(room.customItems.length, 10, 'list is kept for "play again"');
 });
+
+test('host can re-roll the pairing while writing, which clears all answers', () => {
+  const { room, players } = setup();
+  const admin = players[0].id;
+  assert.throws(() => room.reroll(admin), /while everyone is writing/);
+  room.startGame(admin);
+  const first = room.prompt;
+  room.submitAnswer(players[0].id, 'old line');
+  room.submitAnswer(players[1].id, 'another old line');
+  assert.throws(() => room.reroll(players[1].id), /admin/);
+  room.reroll(admin);
+  const second = room.prompt;
+  assert.strictEqual(room.phase, 'writing');
+  assert.strictEqual(room.round, 1, 'still the same round');
+  assert.strictEqual(room.answers.size, 0);
+  assert.strictEqual(room.viewFor(players[0].id).myAnswer, null);
+  assert.strictEqual(room.viewFor(admin).rerolls, 1);
+  assert.strictEqual(room.pending().length, 3, 'waiting on everyone again');
+  // The new pair never reuses the franchises it replaced.
+  assert.ok(![first.a, first.b].includes(second.a) && ![first.a, first.b].includes(second.b));
+  answerAll(room, players);
+  assert.strictEqual(room.phase, 'voting');
+  assert.throws(() => room.reroll(admin), /while everyone is writing/);
+  // The counter resets each round.
+  for (const p of players) room.submitVote(p.id, room.ballotFor(p.id).map((a) => a.id));
+  room.nextRound(admin);
+  assert.strictEqual(room.viewFor(admin).rerolls, 0);
+});

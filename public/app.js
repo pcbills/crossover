@@ -97,7 +97,13 @@
   socket.on('disconnect', () => render());
 
   socket.on('state', (s) => {
+    const prev = state;
     state = s;
+    const rerolled = prev && prev.phase === 'writing' && s.phase === 'writing' &&
+      prev.round === s.round && s.rerolls > prev.rerolls;
+    if (rerolled && !s.isAdmin) toast('🎲 New pairing! Write a fresh line.');
+    // Close the re-roll confirmation if the round moved on underneath it.
+    if ($modal.dataset.kind === 'reroll' && (s.phase !== 'writing' || rerolled)) closeModal();
     render();
   });
 
@@ -309,7 +315,7 @@
   }
 
   function writingView() {
-    const key = `${state.code}-${state.round}`;
+    const key = `${state.code}-${state.round}-${state.rerolls}`;
     if (ui.draftKey !== key) { ui.draftKey = key; ui.draft = ''; }
     if (state.myAnswer) {
       return `
@@ -322,7 +328,8 @@
           ${playerChips({ showWaiting: true })}
         </div>
         ${waitingOn()}
-        ${adminSkip('Stop waiting — go to voting')}`;
+        ${adminSkip('Stop waiting — go to voting')}
+        ${rerollButton()}`;
     }
     return `
       ${roundPill()}
@@ -333,7 +340,36 @@
         <button data-action="answer">Submit answer</button>
       </div>
       ${waitingOn()}
-      ${adminSkip('Stop waiting — go to voting')}`;
+      ${adminSkip('Stop waiting — go to voting')}
+      ${rerollButton()}`;
+  }
+
+  function rerollButton() {
+    if (!state.isAdmin) return '';
+    return `<button class="ghost" data-action="reroll">🎲 Re-roll this pairing</button>`;
+  }
+
+  function showRerollConfirm() {
+    const { a, b } = state.prompt;
+    const answered = state.submittedCount || 0;
+    $modal.innerHTML = `
+      <div class="card">
+        <div style="font-size:2.6rem">🎲</div>
+        <h2>Re-roll this pairing?</h2>
+        <p class="muted"><b>${esc(a)}</b> ✖ <b>${esc(b)}</b> will be swapped for a new pair.
+          ${answered
+            ? `The ${answered} ${answered === 1 ? 'answer' : 'answers'} already submitted will be <b>cleared</b> so everyone can write a new one.`
+            : 'Nobody has submitted an answer yet.'}</p>
+        <button data-action="reroll-confirm">Yes, re-roll</button>
+        <button class="secondary" data-action="close-modal">Cancel</button>
+      </div>`;
+    $modal.dataset.kind = 'reroll';
+    $modal.classList.remove('hidden');
+  }
+
+  function closeModal() {
+    $modal.classList.add('hidden');
+    delete $modal.dataset.kind;
   }
 
   function votingView() {
@@ -547,7 +583,13 @@
     }),
     'go-home': () => { location.href = '/'; },
     invite: () => showInvite(),
-    'close-modal': () => $modal.classList.add('hidden'),
+    'close-modal': () => closeModal(),
+    reroll: () => showRerollConfirm(),
+    'reroll-confirm': async () => {
+      const res = await send('reroll');
+      closeModal();
+      if (res.ok) toast('🎲 New pairing! Answers have been cleared.');
+    },
     start: () => send('start'),
     kick: (el) => {
       const p = state.players.find((p) => p.id === el.dataset.id);
@@ -581,7 +623,7 @@
   document.addEventListener('click', (e) => {
     const el = e.target.closest('[data-action]');
     if (!el) {
-      if (e.target === $modal) $modal.classList.add('hidden');
+      if (e.target === $modal) closeModal();
       return;
     }
     const fn = actions[el.dataset.action];

@@ -225,10 +225,22 @@ class Room {
     this.round += 1;
     this.phase = 'writing';
     this.prompt = this.pickPrompt();
+    this.rerolls = 0;
     this.answers = new Map();
     this.votes = new Map();
     this.lastResults = null;
     this.roundPlayers = new Set(this.connectedPlayers().map((p) => p.id));
+  }
+
+  // Host swaps the current pairing for a new one and wipes everyone's answers
+  // so they can write again. The old pair stays "used" so it won't come back.
+  reroll(playerId) {
+    this.requireAdmin(playerId);
+    if (this.phase !== 'writing') throw new GameError('You can only re-roll while everyone is writing.');
+    this.prompt = this.pickPrompt();
+    this.rerolls += 1;
+    this.answers = new Map();
+    for (const p of this.connectedPlayers()) this.roundPlayers.add(p.id);
   }
 
   submitAnswer(playerId, text) {
@@ -340,6 +352,7 @@ class Room {
       code: this.code,
       phase: this.phase,
       round: this.round,
+      rerolls: this.rerolls ?? 0,
       totalRounds: this.totalRounds,
       minRounds: MIN_ROUNDS,
       maxRounds: MAX_ROUNDS,
