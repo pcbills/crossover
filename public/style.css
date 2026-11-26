@@ -170,3 +170,17 @@ table.scores tr:last-child td { border-bottom: 0; }
 .stepper .step:disabled { background: #cfc6f2; box-shadow: 0 4px 0 #b5abe0; }
 .stepper .step-value { flex: 1; text-align: center; font-size: 1.1rem; color: var(--ink); }
 .stepper .step-value b { font-size: 1.8rem; color: var(--a); margin-right: 4px; }
+
+.cat[data-cat="custom"] { grid-column: 1 / -1; }
+.custom-box { margin-top: 14px; padding: 12px; border-radius: 14px; background: var(--light); }
+.custom-box label { margin-top: 0; display: flex; justify-content: space-between; align-items: center; }
+.custom-box .count { font-size: .85rem; background: #ffe6ef; color: var(--a); padding: 2px 8px; border-radius: 999px; }
+.custom-box .count.ok { background: #dcf8ea; color: #12895a; }
+.add-row { display: flex; gap: 8px; }
+.add-row input { flex: 1; min-width: 0; }
+.custom-list { list-style: none; padding: 0; margin: 10px 0 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.custom-list li {
+  background: #fff; color: var(--ink); border-radius: 999px; padding: 4px 6px 4px 12px;
+  font-weight: 600; font-size: .9rem; display: flex; align-items: center; gap: 4px;
+}
+.custom-list .x { background: none; box-shadow: none; color: var(--muted); padding: 0 4px; margin: 0; width: auto; font-size: .9rem; }

@@ -21,6 +21,7 @@
     code: urlRoom,
     categories: ['everything'],
     rounds: 5,
+    customDraft: '',
     draft: '',
     draftKey: null,
     ranking: [],
@@ -159,6 +160,7 @@
         <input id="name" maxlength="20" autocomplete="nickname" value="${esc(ui.name)}" placeholder="e.g. Dad" />
         <label>Pick categories <span class="muted small">(one or more)</span></label>
         ${cats}
+        ${ui.categories.includes('custom') ? `<p class="small muted">✏️ You’ll type in your custom items on the next screen.</p>` : ''}
         <label>Rounds</label>
         ${roundsStepper(ui.rounds)}
         <button data-action="create" ${ui.busy ? 'disabled' : ''}>Create game</button>
@@ -189,6 +191,34 @@
         <div class="step-value" aria-live="polite"><b>${n}</b> ${n === 1 ? 'round' : 'rounds'}</div>
         <button class="step" data-action="rounds" data-delta="1" aria-label="More rounds" ${n >= MAX_ROUNDS ? 'disabled' : ''}>▶</button>
       </div>`;
+  }
+
+  function customEditor() {
+    const items = state.customItems || [];
+    const short = Math.max(0, state.minCustomItems - items.length);
+    return `
+      <div class="custom-box">
+        <label for="custom-input">✏️ Your custom items
+          <span class="count ${short ? '' : 'ok'}">${items.length}${short ? ` / ${state.minCustomItems} needed` : ' ✓'}</span>
+        </label>
+        <div class="add-row">
+          <input id="custom-input" maxlength="60" autocomplete="off" value="${esc(ui.customDraft)}" placeholder="e.g. Grandpa’s boat" />
+          <button class="small-btn secondary" data-action="custom-add">Add</button>
+        </div>
+        <p class="small" style="color:var(--muted);margin:6px 0 0">Tip: paste a list with one item per line to add them all at once.</p>
+        ${items.length ? `<ul class="custom-list">${items.map((it, i) => `
+          <li>${esc(it)}<button class="x" data-action="custom-remove" data-index="${i}" aria-label="Remove ${esc(it)}">✕</button></li>`).join('')}</ul>` : ''}
+      </div>`;
+  }
+
+  function addCustomItems(newItems) {
+    newItems = newItems.map((t) => t.trim()).filter(Boolean);
+    if (!newItems.length) return;
+    const existing = state.customItems || [];
+    const lower = new Set(existing.map((t) => t.toLowerCase()));
+    const fresh = newItems.filter((t) => !lower.has(t.toLowerCase()));
+    if (!fresh.length) return toast('That’s already on the list.');
+    send('setCustomItems', { items: [...existing, ...fresh] });
   }
 
   function playerChips({ showWaiting = false, kick = false } = {}) {
@@ -225,6 +255,14 @@
 
   function lobbyView() {
     const enough = state.players.filter((p) => p.connected).length >= state.minPlayers;
+    const usesCustom = state.categories.includes('custom');
+    const customShort = usesCustom ? Math.max(0, state.minCustomItems - state.customCount) : 0;
+    const canStart = enough && customShort === 0;
+    const startLabel = !enough
+      ? `Waiting for at least ${state.minPlayers} players…`
+      : customShort
+        ? `Add ${customShort} more custom item${customShort === 1 ? '' : 's'}`
+        : 'Everyone’s in — start!';
     if (state.isAdmin) {
       return `
         <div class="card center">
@@ -238,10 +276,11 @@
           ${playerChips({ kick: true })}
           <label>Categories <span class="small" style="color:var(--muted)">(tap to mix)</span></label>
           ${categoryPicker(state.categories)}
+          ${usesCustom ? customEditor() : ''}
           <label>Rounds</label>
           ${roundsStepper(state.totalRounds)}
-          <button data-action="start" ${enough ? '' : 'disabled'}>
-            ${enough ? 'Everyone’s in — start!' : `Waiting for at least ${state.minPlayers} players…`}
+          <button data-action="start" ${canStart ? '' : 'disabled'}>
+            ${startLabel}
           </button>
         </div>`;
     }
@@ -421,6 +460,7 @@
   document.addEventListener('input', (e) => {
     if (e.target.id === 'name') ui.name = e.target.value;
     if (e.target.id === 'code') ui.code = e.target.value.toUpperCase();
+    if (e.target.id === 'custom-input') ui.customDraft = e.target.value;
     if (e.target.id === 'answer') {
       ui.draft = e.target.value;
       const c = document.getElementById('count');
@@ -428,11 +468,22 @@
     }
   });
 
+  // Pasting several lines into the custom box adds each line as an item.
+  document.addEventListener('paste', (e) => {
+    if (e.target.id !== 'custom-input') return;
+    const text = e.clipboardData?.getData('text') || '';
+    const lines = text.split(/\r?\n/).map((t) => t.trim()).filter(Boolean);
+    if (lines.length < 2) return;
+    e.preventDefault();
+    addCustomItems(lines);
+  });
+
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Enter') return;
     if (e.target.id === 'answer' && !e.shiftKey) { e.preventDefault(); click('answer'); }
     if (e.target.id === 'code') click('enter-code');
     if (e.target.id === 'name') click(urlRoom ? 'join' : 'create');
+    if (e.target.id === 'custom-input') { e.preventDefault(); click('custom-add'); }
   });
 
   function click(action) {
@@ -456,6 +507,18 @@
       if (n === current) return;
       if (state) send('setRounds', { rounds: n });
       else { ui.rounds = n; render(); }
+    },
+    'custom-add': () => {
+      if (!ui.customDraft.trim()) return;
+      addCustomItems([ui.customDraft]);
+      ui.customDraft = '';
+      const input = document.getElementById('custom-input');
+      if (input) { input.value = ''; input.focus(); }
+    },
+    'custom-remove': (el) => {
+      const items = [...(state.customItems || [])];
+      items.splice(Number(el.dataset.index), 1);
+      send('setCustomItems', { items });
     },
     'pick-cat': (el) => {
       const cat = el.dataset.cat;

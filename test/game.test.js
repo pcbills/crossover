@@ -153,3 +153,42 @@ test('host can set 1–7 rounds in the lobby, and the game ends after that many'
   room.setRounds(admin, 7);
   assert.strictEqual(room.viewFor(admin).totalRounds, 7);
 });
+
+test('custom category: host list of 10+ items becomes the pool', () => {
+  const { room, players } = setup(['Ann', 'Ben']);
+  const admin = players[0].id;
+  room.setCategories(admin, ['custom']);
+  assert.strictEqual(room.viewFor(admin).categoryLabel, 'Custom');
+  const nine = Array.from({ length: 9 }, (_, i) => `Thing ${i}`);
+  room.setCustomItems(admin, [...nine, '  ', 'thing 0']); // blanks and repeats are dropped
+  assert.strictEqual(room.customItems.length, 9);
+  assert.throws(() => room.startGame(admin), /at least 10/);
+  assert.throws(() => room.setCustomItems(players[1].id, nine), /admin/);
+  room.setCustomItems(admin, [...nine, 'Thing 9', 'Thing 10']);
+  // Only the host can see the list itself.
+  assert.strictEqual(room.viewFor(admin).customItems.length, 11);
+  assert.strictEqual(room.viewFor(players[1].id).customItems, undefined);
+  assert.strictEqual(room.viewFor(players[1].id).customCount, 11);
+  room.startGame(admin);
+  const pool = new Set(room.customItems);
+  assert.ok(pool.has(room.prompt.a) && pool.has(room.prompt.b));
+  assert.throws(() => room.setCustomItems(admin, nine), /lobby/);
+});
+
+test('custom mixes with built-in categories, and survives a new game', () => {
+  const { CATEGORIES } = require('../src/categories');
+  const { room, players } = setup(['Ann', 'Ben']);
+  const admin = players[0].id;
+  const mine = Array.from({ length: 10 }, (_, i) => `Family joke ${i}`);
+  room.setCategories(admin, ['custom', 'cartoons']);
+  room.setCustomItems(admin, mine);
+  const pool = new Set([...mine, ...CATEGORIES.cartoons.ips]);
+  for (let i = 0; i < 20; i++) {
+    const { a, b } = room.pickPrompt();
+    assert.ok(pool.has(a) && pool.has(b));
+  }
+  room.setCategories(admin, ['custom', 'everything']);
+  assert.deepStrictEqual(room.categories, ['everything']);
+  room.resetGame();
+  assert.strictEqual(room.customItems.length, 10, 'list is kept for "play again"');
+});

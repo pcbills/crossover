@@ -152,6 +152,7 @@ io.on('connection', (socket) => {
     });
 
   action('setCategories', (room, pid, { categories }) => room.setCategories(pid, categories));
+  action('setCustomItems', (room, pid, { items }) => room.setCustomItems(pid, items));
   action('setRounds', (room, pid, { rounds }) => room.setRounds(pid, rounds));
   action('start', (room, pid) => room.startGame(pid));
   action('answer', (room, pid, { text }) => room.submitAnswer(pid, text));

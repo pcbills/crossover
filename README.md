@@ -33,6 +33,11 @@ people ranked an answer first.
 Cartoons, Movies, TV Shows, Sci-Fi, Fantasy, Video Games, Superheroes, and Everything (all mixed).
 The host can tap several to mix them — e.g. **Cartoons + Video Games** draws both franchises
 from the combined list. Tapping **Everything** clears the others (it already includes them).
+
+Pick **✏️ Custom** to play with your own list — inside jokes, family members, places, anything.
+The host types items in the lobby (or pastes a list, one per line) and needs at least 10 before
+starting. Only the host sees the list. Custom can be mixed with other categories, and the list
+lasts for that game room (including "play again"), but isn't saved after that.
 Add or edit franchises in [`src/categories.js`](src/categories.js) — it's just lists of names.
 
 ### Handy details

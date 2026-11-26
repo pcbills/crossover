@@ -102,12 +102,14 @@ CATEGORIES.everything = {
   ips: [...new Set(Object.values(CATEGORIES).flatMap((c) => c.ips))],
 };
 
+// "Custom" has no built-in list: the host types in their own items for the game.
+const CUSTOM = { id: 'custom', label: 'Custom', emoji: '✏️' };
+
 function listCategories() {
-  return Object.entries(CATEGORIES).map(([id, c]) => ({
-    id,
-    label: c.label,
-    emoji: c.emoji,
-  }));
+  return [
+    ...Object.entries(CATEGORIES).map(([id, c]) => ({ id, label: c.label, emoji: c.emoji })),
+    CUSTOM,
+  ];
 }
 
-module.exports = { CATEGORIES, listCategories };
+module.exports = { CATEGORIES, CUSTOM, listCategories };

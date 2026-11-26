@@ -1,9 +1,12 @@
 const crypto = require('crypto');
-const { CATEGORIES } = require('./categories');
+const { CATEGORIES, CUSTOM } = require('./categories');
 
 const TOTAL_ROUNDS = 5; // default
 const MIN_ROUNDS = 1;
 const MAX_ROUNDS = 7;
+const MIN_CUSTOM_ITEMS = 10;
+const MAX_CUSTOM_ITEMS = 200;
+const MAX_CUSTOM_ITEM = 60;
 const MAX_NAME = 20;
 const MAX_ANSWER = 200;
 const MIN_PLAYERS = 2;
@@ -35,6 +38,7 @@ class Room {
     this.players = new Map(); // playerId -> player
     this.adminId = null;
     this.categories = ['everything'];
+    this.customItems = []; // host's own list; lives only as long as this room
     this.totalRounds = TOTAL_ROUNDS;
     this.resetGame();
   }
@@ -116,7 +120,7 @@ class Room {
     if (!Array.isArray(categories)) categories = [categories];
     const picked = [...new Set(categories)];
     if (picked.length === 0) throw new GameError('Pick at least one category.');
-    if (!picked.every((c) => CATEGORIES[c])) throw new GameError('Unknown category.');
+    if (!picked.every((c) => CATEGORIES[c] || c === CUSTOM.id)) throw new GameError('Unknown category.');
     this.categories = picked.includes('everything') ? ['everything'] : picked;
   }
 
@@ -130,8 +134,30 @@ class Room {
     this.totalRounds = n;
   }
 
+  // Replace the host's custom list. Blank lines and repeats are dropped.
+  setCustomItems(playerId, items) {
+    this.requireAdmin(playerId);
+    if (this.phase !== 'lobby') throw new GameError('You can only edit the list in the lobby.');
+    if (!Array.isArray(items)) throw new GameError('Invalid list.');
+    const seen = new Set();
+    const clean = [];
+    for (const raw of items) {
+      const item = cleanText(raw, MAX_CUSTOM_ITEM);
+      const key = item.toLowerCase();
+      if (!item || seen.has(key)) continue;
+      seen.add(key);
+      clean.push(item);
+    }
+    if (clean.length > MAX_CUSTOM_ITEMS) throw new GameError(`That's a lot! Keep it to ${MAX_CUSTOM_ITEMS} items.`);
+    this.customItems = clean;
+  }
+
+  usesCustom() {
+    return this.categories.includes(CUSTOM.id);
+  }
+
   categoryLabel() {
-    return this.categories.map((c) => CATEGORIES[c].label).join(' + ');
+    return this.categories.map((c) => (c === CUSTOM.id ? CUSTOM.label : CATEGORIES[c].label)).join(' + ');
   }
 
   startGame(playerId) {
@@ -139,6 +165,9 @@ class Room {
     if (this.phase !== 'lobby') throw new GameError('The game has already started.');
     if (this.connectedPlayers().length < MIN_PLAYERS) {
       throw new GameError(`You need at least ${MIN_PLAYERS} players to start.`);
+    }
+    if (this.usesCustom() && this.customItems.length < MIN_CUSTOM_ITEMS) {
+      throw new GameError(`Add at least ${MIN_CUSTOM_ITEMS} custom items first.`);
     }
     this.resetGame();
     this.startRound();
@@ -178,7 +207,9 @@ class Room {
   // ---------- round flow ----------
 
   pickPrompt() {
-    const pool = [...new Set(this.categories.flatMap((c) => CATEGORIES[c].ips))];
+    const pool = [
+      ...new Set(this.categories.flatMap((c) => (c === CUSTOM.id ? this.customItems : CATEGORIES[c].ips))),
+    ];
     let available = pool.filter((ip) => !this.usedIps.has(ip));
     if (available.length < 2) {
       this.usedIps.clear();
@@ -312,6 +343,10 @@ class Room {
       totalRounds: this.totalRounds,
       minRounds: MIN_ROUNDS,
       maxRounds: MAX_ROUNDS,
+      minCustomItems: MIN_CUSTOM_ITEMS,
+      customCount: this.customItems.length,
+      // Only the host sees the list itself, so the items stay a surprise.
+      customItems: playerId === this.adminId ? this.customItems : undefined,
       categories: this.categories,
       categoryLabel: this.categoryLabel(),
       isAdmin: playerId === this.adminId,
@@ -348,4 +383,7 @@ class Room {
   }
 }
 
-module.exports = { Room, GameError, PHASES, TOTAL_ROUNDS, MIN_ROUNDS, MAX_ROUNDS, MAX_ANSWER, MAX_NAME };
+module.exports = {
+  Room, GameError, PHASES, TOTAL_ROUNDS, MIN_ROUNDS, MAX_ROUNDS,
+  MIN_CUSTOM_ITEMS, MAX_CUSTOM_ITEMS, MAX_ANSWER, MAX_NAME,
+};
