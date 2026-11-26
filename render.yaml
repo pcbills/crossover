@@ -4,7 +4,7 @@ services:
     name: crossover
     runtime: node
     plan: free
-    buildCommand: npm install
+    buildCommand: npm install && npm test
     startCommand: npm start
     healthCheckPath: /healthz
     autoDeploy: true

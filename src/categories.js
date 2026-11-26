@@ -24,7 +24,7 @@ const CATEGORIES = {
       'Finding Nemo', 'The Princess Bride', 'Elf', 'Grease', 'Barbie',
       'Fast & Furious', 'Pirates of the Caribbean', 'The Karate Kid', 'Free Willy',
       'The Sound of Music', 'Ratatouille', 'Night at the Museum', 'Cars', 'Mamma Mia!',
-      'Willy Wonka', 'Jumanji', 'Paddington', 'A Knight's Tale',
+      'Willy Wonka', 'Jumanji', 'Paddington', 'A Knight\'s Tale',
     ],
   },
   tv: {
