@@ -2,14 +2,14 @@
 
 A Jackbox-style party game for the family, played entirely from phones in a web browser.
 
-Every round, everyone gets the same two random franchises from the chosen category — say
+Every round, everyone gets the same two random franchises from the chosen categories — say
 **Phineas and Ferb ✖ Steven Universe** — and writes a line of dialogue that would appear in
 their crossover. Then everyone ranks all the answers (anonymously, and never their own).
 Answers earn points from the rankings, and after **5 rounds** the player with the most points wins.
 
 ## How a game works
 
-1. **The host** opens the site, enters their name, picks a category, and taps **Create game**.
+1. **The host** opens the site, enters their name, picks one or more categories, and taps **Create game**.
 2. The host's phone shows a **QR code, a link, and a 4-letter code**. Everyone else scans it
    (or goes to the site and types the code) and enters the name they want to use.
    The **📲 Invite** button shows the QR again at any time so latecomers can join.
@@ -17,7 +17,7 @@ Answers earn points from the rankings, and after **5 rounds** the player with th
    - **Write** — everyone writes a line for the crossover.
    - **Rank** — everyone taps the other answers in order, from favourite to least favourite.
    - **Results** — answers are revealed with their authors and points, plus the scoreboard.
-4. After round 5 the winner is crowned 🏆, and the host can **play again** with a new category.
+4. After round 5 the winner is crowned 🏆, and the host can **play again** with new categories.
 
 ### Scoring
 
@@ -28,6 +28,8 @@ people ranked an answer first.
 ### Categories
 
 Cartoons, Movies, TV Shows, Sci-Fi, Fantasy, Video Games, Superheroes, and Everything (all mixed).
+The host can tap several to mix them — e.g. **Cartoons + Video Games** draws both franchises
+from the combined list. Tapping **Everything** clears the others (it already includes them).
 Add or edit franchises in [`src/categories.js`](src/categories.js) — it's just lists of names.
 
 ### Handy details

@@ -19,7 +19,7 @@
   const ui = {
     name: localStorage.getItem('crossover-name') || '',
     code: urlRoom,
-    category: 'everything',
+    categories: ['everything'],
     draft: '',
     draftKey: null,
     ranking: [],
@@ -62,9 +62,21 @@
     });
   }
 
-  function catLabel(id) {
-    const c = categories.find((c) => c.id === id);
-    return c ? `${c.emoji} ${c.label}` : id;
+  function catLabel(ids) {
+    return ids.map((id) => {
+      const c = categories.find((c) => c.id === id);
+      return c ? `${c.emoji} ${c.label}` : id;
+    }).join(' + ');
+  }
+
+  // Tapping a category toggles it. "Everything" stands alone: picking it clears
+  // the others, picking anything else clears it, and unpicking the last one
+  // falls back to it.
+  function toggleCategory(current, id) {
+    if (id === 'everything') return ['everything'];
+    const rest = current.filter((c) => c !== 'everything');
+    const next = rest.includes(id) ? rest.filter((c) => c !== id) : [...rest, id];
+    return next.length ? next : ['everything'];
   }
 
   // ---------- connection ----------
@@ -123,7 +135,7 @@
 
   function homeView() {
     const joining = !!urlRoom;
-    const cats = categoryPicker(ui.category);
+    const cats = categoryPicker(ui.categories);
     if (joining) {
       return `
         <div class="card">
@@ -144,7 +156,7 @@
         <h2>Host a new game</h2>
         <label for="name">Your name</label>
         <input id="name" maxlength="20" autocomplete="nickname" value="${esc(ui.name)}" placeholder="e.g. Dad" />
-        <label>Pick a category</label>
+        <label>Pick categories <span class="muted small">(one or more)</span></label>
         ${cats}
         <button data-action="create" ${ui.busy ? 'disabled' : ''}>Create game</button>
       </div>
@@ -159,7 +171,7 @@
   function categoryPicker(selected) {
     if (!categories.length) return `<p class="muted">Loading…</p>`;
     return `<div class="cats">${categories.map((c) => `
-      <button class="cat ${c.id === selected ? 'selected' : ''}" data-action="pick-cat" data-cat="${c.id}">
+      <button class="cat ${selected.includes(c.id) ? 'selected' : ''}" aria-pressed="${selected.includes(c.id)}" data-action="pick-cat" data-cat="${c.id}">
         <span class="emoji">${c.emoji}</span>${esc(c.label)}
       </button>`).join('')}</div>`;
   }
@@ -193,7 +205,7 @@
   }
 
   function roundPill() {
-    return `<div class="round-pill">Round ${state.round} of ${state.totalRounds} · ${esc(catLabel(state.category))}</div>`;
+    return `<div class="round-pill">Round ${state.round} of ${state.totalRounds} · ${esc(catLabel(state.categories))}</div>`;
   }
 
   function lobbyView() {
@@ -209,8 +221,8 @@
         <div class="card">
           <h2>Players (${state.players.length})</h2>
           ${playerChips({ kick: true })}
-          <label>Category</label>
-          ${categoryPicker(state.category)}
+          <label>Categories <span class="small" style="color:var(--muted)">(tap to mix)</span></label>
+          ${categoryPicker(state.categories)}
           <button data-action="start" ${enough ? '' : 'disabled'}>
             ${enough ? 'Everyone’s in — start!' : `Waiting for at least ${state.minPlayers} players…`}
           </button>
@@ -220,7 +232,7 @@
       <div class="card waiting-box">
         <div class="big">🍿</div>
         <h2>You’re in, ${esc(state.me.name)}!</h2>
-        <p class="muted">Category: <b>${esc(catLabel(state.category))}</b><br/>Waiting for ${esc(state.adminName)} to start the game…</p>
+        <p class="muted">${state.categories.length > 1 ? 'Categories' : 'Category'}: <b>${esc(catLabel(state.categories))}</b><br/>Waiting for ${esc(state.adminName)} to start the game…</p>
       </div>
       <div class="card">
         <h2>Players (${state.players.length})</h2>
@@ -343,7 +355,7 @@
         ${scoreTable()}
       </div>
       ${state.isAdmin
-        ? `<button data-action="new-game">Play again (pick a new category)</button>`
+        ? `<button data-action="new-game">Play again (pick new categories)</button>`
         : `<p class="center muted">Waiting for ${esc(state.adminName)} to start a new game…</p>`}
       <p class="center"><button class="link" data-action="leave">Leave game</button></p>`;
   }
@@ -423,13 +435,13 @@
   const actions = {
     'pick-cat': (el) => {
       const cat = el.dataset.cat;
-      if (state) send('setCategory', { category: cat });
-      else { ui.category = cat; render(); }
+      if (state) send('setCategories', { categories: toggleCategory(state.categories, cat) });
+      else { ui.categories = toggleCategory(ui.categories, cat); render(); }
     },
     create: () => withBusy(async () => {
       if (!ui.name.trim()) return toast('Enter your name first.');
       rememberName();
-      const res = await send('create', { name: ui.name, category: ui.category });
+      const res = await send('create', { name: ui.name, categories: ui.categories });
       if (res.ok) {
         saveSession({ code: res.code, playerId: res.playerId });
         history.replaceState(null, '', `/?room=${res.code}`);

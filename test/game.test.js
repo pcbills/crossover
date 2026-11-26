@@ -32,7 +32,7 @@ test('only the admin can start, and needs 2+ players', () => {
 
 test('voting begins once everyone answers; players never see their own answer', () => {
   const { room, players } = setup();
-  room.setCategory(players[0].id, 'cartoons');
+  room.setCategories(players[0].id, ['cartoons']);
   room.startGame(players[0].id);
   room.submitAnswer(players[0].id, 'hi');
   assert.strictEqual(room.phase, 'writing');
@@ -90,7 +90,7 @@ test('a full game lasts 5 rounds, crowns a winner, and can restart', () => {
   assert.ok(room.viewFor(admin).winners.length >= 1);
   room.newGame(admin);
   assert.strictEqual(room.phase, 'lobby');
-  room.setCategory(admin, 'fantasy');
+  room.setCategories(admin, ['fantasy']);
   assert.ok([...room.players.values()].every((p) => p.score === 0));
 });
 
@@ -111,4 +111,23 @@ test('admin role passes on when the admin leaves', () => {
   room.setConnected(players[0].id, false);
   assert.ok(room.ensureAdmin());
   assert.strictEqual(room.adminId, players[1].id);
+});
+
+test('multiple categories mix their franchises; "everything" stands alone', () => {
+  const { CATEGORIES } = require('../src/categories');
+  const { room, players } = setup();
+  const admin = players[0].id;
+  room.setCategories(admin, ['cartoons', 'videogames']);
+  assert.deepStrictEqual(room.categories, ['cartoons', 'videogames']);
+  assert.strictEqual(room.viewFor(admin).categoryLabel, 'Cartoons + Video Games');
+  const pool = new Set([...CATEGORIES.cartoons.ips, ...CATEGORIES.videogames.ips]);
+  for (let i = 0; i < 20; i++) {
+    const { a, b } = room.pickPrompt();
+    assert.ok(pool.has(a) && pool.has(b), `${a} / ${b} should come from the picked categories`);
+  }
+  room.setCategories(admin, ['cartoons', 'everything']);
+  assert.deepStrictEqual(room.categories, ['everything']);
+  assert.throws(() => room.setCategories(admin, []), GameError);
+  assert.throws(() => room.setCategories(admin, ['cartoons', 'nope']), GameError);
+  assert.throws(() => room.setCategories(players[1].id, ['movies']), /admin/);
 });

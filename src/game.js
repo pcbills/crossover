@@ -32,7 +32,7 @@ class Room {
     this.code = code;
     this.players = new Map(); // playerId -> player
     this.adminId = null;
-    this.category = 'everything';
+    this.categories = ['everything'];
     this.totalRounds = TOTAL_ROUNDS;
     this.resetGame();
   }
@@ -106,11 +106,20 @@ class Room {
 
   // ---------- admin actions ----------
 
-  setCategory(playerId, category) {
+  // Pick one or more categories. "everything" can't be combined with others
+  // (it already includes them all).
+  setCategories(playerId, categories) {
     this.requireAdmin(playerId);
-    if (!CATEGORIES[category]) throw new GameError('Unknown category.');
-    if (this.phase !== 'lobby') throw new GameError('You can only change category in the lobby.');
-    this.category = category;
+    if (this.phase !== 'lobby') throw new GameError('You can only change categories in the lobby.');
+    if (!Array.isArray(categories)) categories = [categories];
+    const picked = [...new Set(categories)];
+    if (picked.length === 0) throw new GameError('Pick at least one category.');
+    if (!picked.every((c) => CATEGORIES[c])) throw new GameError('Unknown category.');
+    this.categories = picked.includes('everything') ? ['everything'] : picked;
+  }
+
+  categoryLabel() {
+    return this.categories.map((c) => CATEGORIES[c].label).join(' + ');
   }
 
   startGame(playerId) {
@@ -157,7 +166,7 @@ class Room {
   // ---------- round flow ----------
 
   pickPrompt() {
-    const pool = CATEGORIES[this.category].ips;
+    const pool = [...new Set(this.categories.flatMap((c) => CATEGORIES[c].ips))];
     let available = pool.filter((ip) => !this.usedIps.has(ip));
     if (available.length < 2) {
       this.usedIps.clear();
@@ -289,8 +298,8 @@ class Room {
       phase: this.phase,
       round: this.round,
       totalRounds: this.totalRounds,
-      category: this.category,
-      categoryLabel: CATEGORIES[this.category].label,
+      categories: this.categories,
+      categoryLabel: this.categoryLabel(),
       isAdmin: playerId === this.adminId,
       adminName: this.players.get(this.adminId)?.name ?? null,
       me: me ? { id: me.id, name: me.name, score: me.score } : null,
