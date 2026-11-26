@@ -63,7 +63,14 @@ Everyone's phone must be on the same Wi-Fi network.
 
 ### Playing over the internet
 
-To play with family who aren't on your Wi-Fi, deploy it to any Node host that supports
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/pcbills/crossover)
+
+The easiest option is Render's free plan: click the button above and approve the defaults
+(configured in [`render.yaml`](render.yaml)). Free services sleep after 15 minutes without
+visitors, so the host should open the site a minute before playing to wake it up.
+Each push to `main` redeploys automatically.
+
+Otherwise, deploy it to any Node host that supports
 WebSockets (Render, Railway, Fly.io, a VPS…). Use `npm start` as the start command. The server
 reads:
 
