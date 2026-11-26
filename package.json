@@ -1,0 +1,20 @@
+{
+  "name": "crossover",
+  "version": "1.0.0",
+  "description": "A family party game: write the line of dialogue from a crossover of two random franchises, then rank everyone’s answers.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "test": "node --test test/*.test.js"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.22.3",
+    "qrcode": "^1.5.4",
+    "socket.io": "^4.8.4"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
