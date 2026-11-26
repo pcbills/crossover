@@ -1,7 +1,9 @@
 const crypto = require('crypto');
 const { CATEGORIES } = require('./categories');
 
-const TOTAL_ROUNDS = 5;
+const TOTAL_ROUNDS = 5; // default
+const MIN_ROUNDS = 1;
+const MAX_ROUNDS = 7;
 const MAX_NAME = 20;
 const MAX_ANSWER = 200;
 const MIN_PLAYERS = 2;
@@ -116,6 +118,16 @@ class Room {
     if (picked.length === 0) throw new GameError('Pick at least one category.');
     if (!picked.every((c) => CATEGORIES[c])) throw new GameError('Unknown category.');
     this.categories = picked.includes('everything') ? ['everything'] : picked;
+  }
+
+  setRounds(playerId, rounds) {
+    this.requireAdmin(playerId);
+    if (this.phase !== 'lobby') throw new GameError('You can only change the rounds in the lobby.');
+    const n = Number(rounds);
+    if (!Number.isInteger(n) || n < MIN_ROUNDS || n > MAX_ROUNDS) {
+      throw new GameError(`Pick between ${MIN_ROUNDS} and ${MAX_ROUNDS} rounds.`);
+    }
+    this.totalRounds = n;
   }
 
   categoryLabel() {
@@ -298,6 +310,8 @@ class Room {
       phase: this.phase,
       round: this.round,
       totalRounds: this.totalRounds,
+      minRounds: MIN_ROUNDS,
+      maxRounds: MAX_ROUNDS,
       categories: this.categories,
       categoryLabel: this.categoryLabel(),
       isAdmin: playerId === this.adminId,
@@ -334,4 +348,4 @@ class Room {
   }
 }
 
-module.exports = { Room, GameError, PHASES, TOTAL_ROUNDS, MAX_ANSWER, MAX_NAME };
+module.exports = { Room, GameError, PHASES, TOTAL_ROUNDS, MIN_ROUNDS, MAX_ROUNDS, MAX_ANSWER, MAX_NAME };

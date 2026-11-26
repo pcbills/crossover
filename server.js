@@ -113,10 +113,11 @@ io.on('connection', (socket) => {
     return { code: room.code, playerId: player.id };
   };
 
-  on('create', ({ name, categories }) => {
+  on('create', ({ name, categories, rounds }) => {
     const room = new Room(makeCode());
     const player = room.addPlayer(name);
     if (categories) room.setCategories(player.id, categories);
+    if (rounds != null) room.setRounds(player.id, rounds);
     rooms.set(room.code, room);
     return attach(room, player);
   });
@@ -151,6 +152,7 @@ io.on('connection', (socket) => {
     });
 
   action('setCategories', (room, pid, { categories }) => room.setCategories(pid, categories));
+  action('setRounds', (room, pid, { rounds }) => room.setRounds(pid, rounds));
   action('start', (room, pid) => room.startGame(pid));
   action('answer', (room, pid, { text }) => room.submitAnswer(pid, text));
   action('vote', (room, pid, { ranking }) => room.submitVote(pid, ranking));

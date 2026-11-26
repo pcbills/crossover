@@ -20,6 +20,7 @@
     name: localStorage.getItem('crossover-name') || '',
     code: urlRoom,
     categories: ['everything'],
+    rounds: 5,
     draft: '',
     draftKey: null,
     ranking: [],
@@ -158,6 +159,8 @@
         <input id="name" maxlength="20" autocomplete="nickname" value="${esc(ui.name)}" placeholder="e.g. Dad" />
         <label>Pick categories <span class="muted small">(one or more)</span></label>
         ${cats}
+        <label>Rounds</label>
+        ${roundsStepper(ui.rounds)}
         <button data-action="create" ${ui.busy ? 'disabled' : ''}>Create game</button>
       </div>
       <div class="card">
@@ -174,6 +177,18 @@
       <button class="cat ${selected.includes(c.id) ? 'selected' : ''}" aria-pressed="${selected.includes(c.id)}" data-action="pick-cat" data-cat="${c.id}">
         <span class="emoji">${c.emoji}</span>${esc(c.label)}
       </button>`).join('')}</div>`;
+  }
+
+  const MIN_ROUNDS = 1;
+  const MAX_ROUNDS = 7;
+
+  function roundsStepper(n) {
+    return `
+      <div class="stepper">
+        <button class="step" data-action="rounds" data-delta="-1" aria-label="Fewer rounds" ${n <= MIN_ROUNDS ? 'disabled' : ''}>◀</button>
+        <div class="step-value" aria-live="polite"><b>${n}</b> ${n === 1 ? 'round' : 'rounds'}</div>
+        <button class="step" data-action="rounds" data-delta="1" aria-label="More rounds" ${n >= MAX_ROUNDS ? 'disabled' : ''}>▶</button>
+      </div>`;
   }
 
   function playerChips({ showWaiting = false, kick = false } = {}) {
@@ -223,6 +238,8 @@
           ${playerChips({ kick: true })}
           <label>Categories <span class="small" style="color:var(--muted)">(tap to mix)</span></label>
           ${categoryPicker(state.categories)}
+          <label>Rounds</label>
+          ${roundsStepper(state.totalRounds)}
           <button data-action="start" ${enough ? '' : 'disabled'}>
             ${enough ? 'Everyone’s in — start!' : `Waiting for at least ${state.minPlayers} players…`}
           </button>
@@ -232,7 +249,7 @@
       <div class="card waiting-box">
         <div class="big">🍿</div>
         <h2>You’re in, ${esc(state.me.name)}!</h2>
-        <p class="muted">${state.categories.length > 1 ? 'Categories' : 'Category'}: <b>${esc(catLabel(state.categories))}</b><br/>Waiting for ${esc(state.adminName)} to start the game…</p>
+        <p class="muted">${state.categories.length > 1 ? 'Categories' : 'Category'}: <b>${esc(catLabel(state.categories))}</b><br/>Rounds: <b>${state.totalRounds}</b><br/>Waiting for ${esc(state.adminName)} to start the game…</p>
       </div>
       <div class="card">
         <h2>Players (${state.players.length})</h2>
@@ -355,7 +372,7 @@
         ${scoreTable()}
       </div>
       ${state.isAdmin
-        ? `<button data-action="new-game">Play again (pick new categories)</button>`
+        ? `<button data-action="new-game">Play again (new categories or rounds)</button>`
         : `<p class="center muted">Waiting for ${esc(state.adminName)} to start a new game…</p>`}
       <p class="center"><button class="link" data-action="leave">Leave game</button></p>`;
   }
@@ -433,6 +450,13 @@
   }
 
   const actions = {
+    rounds: (el) => {
+      const current = state ? state.totalRounds : ui.rounds;
+      const n = Math.min(MAX_ROUNDS, Math.max(MIN_ROUNDS, current + Number(el.dataset.delta)));
+      if (n === current) return;
+      if (state) send('setRounds', { rounds: n });
+      else { ui.rounds = n; render(); }
+    },
     'pick-cat': (el) => {
       const cat = el.dataset.cat;
       if (state) send('setCategories', { categories: toggleCategory(state.categories, cat) });
@@ -441,7 +465,7 @@
     create: () => withBusy(async () => {
       if (!ui.name.trim()) return toast('Enter your name first.');
       rememberName();
-      const res = await send('create', { name: ui.name, categories: ui.categories });
+      const res = await send('create', { name: ui.name, categories: ui.categories, rounds: ui.rounds });
       if (res.ok) {
         saveSession({ code: res.code, playerId: res.playerId });
         history.replaceState(null, '', `/?room=${res.code}`);

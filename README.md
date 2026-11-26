@@ -5,11 +5,13 @@ A Jackbox-style party game for the family, played entirely from phones in a web 
 Every round, everyone gets the same two random franchises from the chosen categories — say
 **Phineas and Ferb ✖ Steven Universe** — and writes a line of dialogue that would appear in
 their crossover. Then everyone ranks all the answers (anonymously, and never their own).
-Answers earn points from the rankings, and after **5 rounds** the player with the most points wins.
+Answers earn points from the rankings, and after the last round (5 by default, the host can pick
+1–7) the player with the most points wins.
 
 ## How a game works
 
-1. **The host** opens the site, enters their name, picks one or more categories, and taps **Create game**.
+1. **The host** opens the site, enters their name, picks one or more categories,
+   sets the number of rounds (1–7) with the ◀ ▶ arrows, and taps **Create game**.
 2. The host's phone shows a **QR code, a link, and a 4-letter code**. Everyone else scans it
    (or goes to the site and types the code) and enters the name they want to use.
    The **📲 Invite** button shows the QR again at any time so latecomers can join.
@@ -17,7 +19,8 @@ Answers earn points from the rankings, and after **5 rounds** the player with th
    - **Write** — everyone writes a line for the crossover.
    - **Rank** — everyone taps the other answers in order, from favourite to least favourite.
    - **Results** — answers are revealed with their authors and points, plus the scoreboard.
-4. After round 5 the winner is crowned 🏆, and the host can **play again** with new categories.
+4. After the last round the winner is crowned 🏆, and the host can **play again** with new
+   categories or a different number of rounds.
 
 ### Scoring
 

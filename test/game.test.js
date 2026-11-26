@@ -131,3 +131,25 @@ test('multiple categories mix their franchises; "everything" stands alone', () =
   assert.throws(() => room.setCategories(admin, ['cartoons', 'nope']), GameError);
   assert.throws(() => room.setCategories(players[1].id, ['movies']), /admin/);
 });
+
+test('host can set 1–7 rounds in the lobby, and the game ends after that many', () => {
+  const { room, players } = setup(['Ann', 'Ben']);
+  const admin = players[0].id;
+  assert.strictEqual(room.totalRounds, 5);
+  for (const bad of [0, 8, 2.5, 'lots']) assert.throws(() => room.setRounds(admin, bad), GameError);
+  assert.throws(() => room.setRounds(players[1].id, 3), /admin/);
+  room.setRounds(admin, 2);
+  room.startGame(admin);
+  assert.throws(() => room.setRounds(admin, 4), /lobby/);
+  for (let r = 1; r <= 2; r++) {
+    answerAll(room, players);
+    for (const p of players) room.submitVote(p.id, room.ballotFor(p.id).map((a) => a.id));
+    assert.strictEqual(room.viewFor(admin).isLastRound, r === 2);
+    room.nextRound(admin);
+  }
+  assert.strictEqual(room.phase, 'final');
+  room.newGame(admin);
+  assert.strictEqual(room.totalRounds, 2, 'round count carries over to the next game');
+  room.setRounds(admin, 7);
+  assert.strictEqual(room.viewFor(admin).totalRounds, 7);
+});
