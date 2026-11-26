@@ -25,7 +25,7 @@ const CATEGORIES = {
       'Fast & Furious', 'Pirates of the Caribbean', 'October Sky',
       'The Sound of Music', 'Ratatouille', 'Night at the Museum', 'Cars', 'Mamma Mia!',
       'Willy Wonka', 'Jumanji', 'A Knight\'s Tale', 'Kung Fu Panda', 'Star Wars',
-      'Lord of the Rings', 'James Bond', 'Harry Potter', 'High School Musical',
+      'The Lord of the Rings', 'James Bond', 'Harry Potter', 'High School Musical',
     ],
   },
   tv: {
@@ -39,7 +39,7 @@ const CATEGORIES = {
       'Brooklyn Nine-Nine', 'The Price Is Right',
       'Mister Rogers Neighborhood', 'Sesame Street', 'Gilmore Girls',
       'Bridgerton', 'The Mandalorian', 'Antiques Roadshow', 'Andor',
-      'The Good Place', 'NCIS', '24', 'Law and Order', 'Psych',
+      'The Good Place', 'NCIS', '24', 'Psych',
     ],
   },
   scifi: {
